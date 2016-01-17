@@ -254,7 +254,8 @@ class Fixer
             }
 
             $fixInfo = array('appliedFixers' => $appliedFixers);
-
+            $fixInfo['old'] = $old;
+            $fixInfo['new'] = $new;
             if ($diff) {
                 $fixInfo['diff'] = $this->stringDiff($old, $new);
             }

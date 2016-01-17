@@ -112,6 +112,8 @@ class FixCommand extends Command
                     new InputOption('fixers', '', InputOption::VALUE_REQUIRED, 'A list of fixers to run'),
                     new InputOption('diff', '', InputOption::VALUE_NONE, 'Also produce diff for each file'),
                     new InputOption('format', '', InputOption::VALUE_REQUIRED, 'To output results in other formats', 'txt'),
+                    // @HACK
+                    new InputOption('output', '', InputOption::VALUE_NONE, 'Send formatted content to STDOUT'),
                 )
             )
             ->setDescription('Fixes a directory or a file')
@@ -343,8 +345,8 @@ EOF
             if (!$config instanceof Config) {
                 throw new InvalidConfigurationException(sprintf('The config file "%s" does not return a "Symfony\CS\Config\Config" instance. Got: "%s".', $configFile, is_object($config) ? get_class($config) : gettype($config)));
             }
-
-            if ('txt' === $input->getOption('format')) {
+            // @HACK
+            if (!$input->getOption('output') && 'txt' === $input->getOption('format')) {
                 $output->writeln(sprintf('Loaded config from "%s"', $configFile));
             }
         } else {
@@ -395,6 +397,19 @@ EOF
         $this->stopwatch->start('fixFiles');
         $changed = $this->fixer->fix($config, $input->getOption('dry-run'), $input->getOption('diff'));
         $this->stopwatch->stop('fixFiles');
+
+        // @HACK
+        if ($input->getOption('output')) {
+            if (!empty($changed['stdin.php']['new'])) {
+                $output->write($changed['stdin.php']['new']);
+            } else {
+                $output->write('');
+            }
+
+            return 0;
+        }
+
+
 
         if ($showProgress) {
             $this->fixer->setEventDispatcher(null);
